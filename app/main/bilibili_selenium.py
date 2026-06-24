@@ -10,7 +10,7 @@ import json
 import re
 import os
 #==================================UID & url部分===============================
-UID = 'input_uid here'
+UID = "470673207"
 url = f"https://space.bilibili.com/{UID}/upload/video"   #获取关注数 粉丝数 点赞量 播放量
 #=================================创建文件目录==================================
 data_dir_path = os.path.join('.','app','data','raw',f'UID_{UID}')
@@ -60,8 +60,17 @@ try:
     #将cookies带入driver -----如果文件是空的或者被损坏或者过期会报错然后进行登录操作
     for item in cookies_list:
         driver.add_cookie(item)
-    #标记存在cookies数据
-    cookies_flag = True
+    #验证cookies是否还有效
+    time.sleep(1)
+    login_test = driver.find_elements(
+        By.XPATH,'//*[@id="app"]//div[@class="bili-header__bar"]//ul[@class="right-entry"]//div[@class="header-login-entry"]'
+    )
+    #标记cookies数据是否有效
+    if login_test:
+        cookies_flag = True
+    else:
+        cookies_flag = False
+        print('储存的cookies失效')
 except:  #没有cookies文件 需要登录储存
     cookies_flag = False
 
@@ -140,7 +149,7 @@ while True:
     if video_data_raw:
         break
     driver.refresh()
-    time.sleep(5)
+    time.sleep(3)
 
 video_href_list=[]
 while True:
@@ -176,12 +185,25 @@ while True:
     #链接数据处理
         url_single_video = ele.find_element(
         By.XPATH,
-        ".//div[@class='bili-video-card__cover']/a[@class='bili-cover-card']"
+        ".//div[@class='bili-video-card__cover']//a[@class='bili-cover-card']"
         ).get_attribute('href')
         if not url_single_video.startswith('https:'):
             url_single_video = os.path.join('https:',url_single_video)
         #处理完毕后加到列表
         video_href_list.append(url_single_video)
+    if len(video_href_list) != len(set(video_href_list)):
+        video_href_list = [i for i in set(video_href_list)]
+        if button2[0].text == "下一页":
+            button2[0].click()
+            time.sleep(1)
+            button1[0].click()
+            time.sleep(2)
+            continue
+        button1[0].click()
+        time.sleep(1)
+        button2[0].click()
+        time.sleep(2)
+        continue
 
     #换页操作
     if button2[0].text == '下一页':  #还有下一页就一直跳转直到没
